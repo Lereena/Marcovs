@@ -6,47 +6,60 @@ namespace Marcovs
 {
     class Substitution
     {
-        public string Prev { get; }
-        public string Next { get; }
+        public string Replaceable { get; }
+        public string Replacement { get; }
         public bool IsFinal { get; }
 
-        public Substitution(string prev, string next, bool isFinal)
+        public Substitution(string replaceable, string replacement, bool isFinal)
         {
-            Prev = prev;
-            Next = next;
+            Replaceable = replaceable;
+            Replacement = replacement;
             IsFinal = isFinal;
         }
     }
     
-    internal class Program
+    static class Program
     {
         static List<Substitution> ReadScheme()
         {
             var res = new List<Substitution>();
+            var substitution = Console.ReadLine();
             
-            while (true)
+            while (substitution != "(end)")
             {
-                var substitution = Console.ReadLine();
                 if (substitution == null)
                     return res;
 
                 var subArr = substitution.Split();
-                Substitution sub;
-                switch (substitution.Length)
+                switch (subArr.Length)
                 {
+                    case 1 :
+                        if (substitution == "(end)")
+                            break;
+                        else
+                        {
+                            Console.WriteLine("Неверный формат подстановки. Попробуйте ещё раз");
+                            break;
+                        }
                     case 2 : 
-                        res.Add(new Substitution(subArr[0], subArr[1], false));
+                        res.Add(new Substitution(EmptyIfEps(subArr[0]), EmptyIfEps(subArr[1]), false));
                         break;
                     case 3 :
-                        res.Add(new Substitution(subArr[0], subArr[1], true));
+                        res.Add(new Substitution(EmptyIfEps(subArr[0]), EmptyIfEps(subArr[2]), true));
                         break;
                     default :
                         Console.WriteLine("Неверный формат подстановки. Попробуйте ещё раз");
                         break;
                 }
+                
+                substitution = Console.ReadLine();
             }
+
+            return res;
         }
 
+        static string EmptyIfEps(string str) => str == "(Eps)" ? "" : str;
+        
         static void ApplyScheme(List<Substitution> scheme, string word)
         {
             var close = false;
@@ -54,16 +67,29 @@ namespace Marcovs
             {
                 foreach (var sub in scheme)
                 {
-                    if (word.IndexOf(sub.Prev, StringComparison.Ordinal) != -1)
+                    if (word.IndexOf(sub.Replaceable, StringComparison.Ordinal) != -1)
                     {
-                        word = word.Replace(sub.Prev, sub.Next);
-                        Console.WriteLine(word);
+                        word = word.ReplaceFirst(sub.Replaceable, sub.Replacement);
+
+                        Console.WriteLine(word == "" ? "(Eps)" : word);
+
                         if (sub.IsFinal)
                             close = true;
+                        
                         break;
                     }
                 }
             }
+        }
+        
+        static string ReplaceFirst(this string text, string search, string replace)
+        {
+            int pos = text.IndexOf(search, StringComparison.Ordinal);
+            if (pos < 0)
+            {
+                return text;
+            }
+            return text.Substring(0, pos) + replace + text.Substring(pos + search.Length);
         }
         
         public static void Main(string[] args)
